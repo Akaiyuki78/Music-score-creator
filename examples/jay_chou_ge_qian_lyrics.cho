@@ -1,0 +1,38 @@
+{title: 搁浅 (Gē Qiǎn / Step Aside)}
+{subtitle: 专辑《七里香》 (2004) | 原调 Eb (变调夹 Capo 3 弹 C 调指法)}
+{artist: 周杰伦 (Jay Chou) | 词: 宋健彰 | 曲: 周杰伦}
+{key: Eb}
+{capo: 3}
+{tempo: 64}
+{time: 4/4}
+
+{start_of_verse: Intro (前奏)}
+[Eb]   [Bb/D]   [Cm7]   [Cm7/Bb]   [Abmaj7]   [Gm7]   [Fm7]   [Bb]
+{end_of_verse}
+
+{start_of_verse: Verse 1 (主歌)}
+[Eb]久未放[Bb/D]晴的天[Cm7]空  依旧[Cm7/Bb]留着你的笑[Abmaj7]容
+[Gm7]哭过[Cm7]却无法掩[Fm7]埋歉[Bb]疚
+[Eb]风筝在[Bb/D]阴天搁[Cm7]浅  想念[Cm7/Bb]还在等待救[Abmaj7]援
+[Gm7]我拉着[Cm7]线复习你[Fm7]给的温[Bb]柔
+{end_of_verse}
+
+{start_of_verse: Pre-Chorus (导歌)}
+[Gm7]曝晒在一[C7]旁的寂寞  [Fm7]笑我给不起[Bb]承诺
+[Gm7]怎么会怎[C7]么会你竟[Fm7]原谅着[Bb]我[Bbsus4][Bb]
+{end_of_verse}
+
+{start_of_chorus: Chorus 1 (副歌)}
+[Eb]我只能[Bb/D]永远读着对[Cm7]白  读着[Cm7/Bb]我给你的伤[Abmaj7]害
+[Gm7]我原谅[Cm7]不了我  [Fm7]就请你当作[Bb]我已不在
+[Eb]我睁开[Bb/D]双眼看着空[Cm7]白  忘记[Cm7/Bb]你对我的期[Abmaj7]待
+[Gm7]读完了依[Cm7]赖  我[Fm7]很快就[Bb]离[Eb]开
+{end_of_chorus}
+
+{start_of_chorus: Final Chorus (尾段升调副歌 +2 Key: F / Capo 3 Play D)}
+{comment: 升全音转 F 调 (Capo 3 夹三品弹 D 调指法，或移至 Capo 5 弹 C 调指法)}
+[F]我只能[C/E]永远读着对[Dm7]白  读着[Dm7/C]我给你的伤[Bbmaj7]害
+[Am7]我原谅[Dm7]不了我  [Gm7]就请你当作[C]我已不在
+[F]我睁开[C/E]双眼看着空[Dm7]白  忘记[Dm7/C]你对我的期[Bbmaj7]待
+[Am7]读完了依[Dm7]赖  我[Gm7]很快就[C]离[F]开
+{end_of_chorus}

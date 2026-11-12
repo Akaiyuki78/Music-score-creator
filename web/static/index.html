@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LeadSheet Creator — Lyrics, Annotation & Chords</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <!-- Top Navigation & Brand -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-badge">🎸</span>
+      <div>
+        <h1>LeadSheet Creator</h1>
+        <p class="subtitle">Lyrics, Hanyu Pinyin & Chords Lead Sheet</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <button type="button" id="btn-load-geqian" class="btn btn-secondary">周杰伦《晴天》</button>
+      <button type="button" id="btn-load-demo" class="btn btn-secondary">周华健《朋友》</button>
+      <button type="button" id="btn-load-shout" class="btn btn-secondary">Shout to the Lord</button>
+      <button type="button" id="btn-export-pdf" class="btn btn-primary">📄 PDF Chart</button>
+      <button type="button" id="btn-export-xml" class="btn btn-outline">🎼 MusicXML</button>
+      <button type="button" id="btn-export-cho" class="btn btn-outline">📝 ChordPro</button>
+    </div>
+  </header>
+
+  <!-- Single Quick Search & Scrape Banner -->
+  <section class="quick-add-banner" aria-label="Quick Search or Scrape Song">
+    <div class="banner-inner">
+      <span class="banner-icon">🔍</span>
+      <input
+        type="text"
+        id="quick-youtube-input"
+        placeholder="Type song name (e.g. Shout to the Lord / 七里香) or paste YouTube link to scrape lyrics & chords..."
+      />
+      <button type="button" id="btn-quick-import" class="btn btn-primary">Find Chords</button>
+    </div>
+
+    <!-- Community Verified Chord Versions Drawer -->
+    <div id="version-results-box" class="version-results-box hidden">
+      <div class="version-results-header">
+        <span class="version-results-title">🎸 Available Verified Chord Versions:</span>
+        <span id="version-results-hint" class="version-results-hint">Click any version to load</span>
+      </div>
+      <div id="version-pill-list" class="version-pill-list"></div>
+    </div>
+  </section>
+
+  <!-- Musician Controls Toolbar -->
+  <section class="toolbar" aria-label="Musician Controls">
+    <!-- Unified Key & Pitch Adjustment Box -->
+    <div class="key-control-box" title="Concert pitch -> Adjustments (Transpose & Capo) -> Resulting Output Key">
+      <div class="key-box-step">
+        <span class="key-box-label">Concert Pitch</span>
+        <strong id="box-concert-key" class="key-badge-pitch">C</strong>
+      </div>
+      <div class="key-box-arrow">➔</div>
+      <div class="key-box-step">
+        <span class="key-box-label">Adjust Pitch</span>
+        <div class="stepper-inline">
+          <button type="button" id="btn-trans-down" class="btn btn-sm stepper-btn" title="Pitch Down 1 Semitone">−1</button>
+          <strong id="lbl-transpose" class="stepper-val">0 st</strong>
+          <button type="button" id="btn-trans-up" class="btn btn-sm stepper-btn" title="Pitch Up 1 Semitone">+1</button>
+        </div>
+      </div>
+      <div class="key-box-step">
+        <span class="key-box-label">Guitar Capo</span>
+        <div class="capo-inline">
+          <select id="sel-capo" class="sel-capo-sm">
+            <option value="0">Capo 0</option>
+            <option value="1">Capo 1</option>
+            <option value="2">Capo 2</option>
+            <option value="3">Capo 3</option>
+            <option value="4">Capo 4</option>
+            <option value="5">Capo 5</option>
+            <option value="6">Capo 6</option>
+            <option value="7">Capo 7</option>
+          </select>
+          <button type="button" id="btn-auto-capo" class="btn btn-sm btn-outline-alt" title="Recommend easiest open guitar chord shapes">Auto</button>
+        </div>
+      </div>
+      <div class="key-box-arrow">➔</div>
+      <div class="key-box-step key-box-result">
+        <span class="key-box-label">Output Key</span>
+        <strong id="box-output-key" class="key-badge-output">C</strong>
+      </div>
+    </div>
+
+    <!-- Additional Display Options -->
+    <div class="control-group">
+      <label class="toggle-label" title="Show shapes relative to capo rather than concert pitch">
+        <input type="checkbox" id="chk-capo-shapes" checked />
+        <span>Capo Shapes</span>
+      </label>
+      <label class="toggle-label" title="Display Nashville Number System chords">
+        <input type="checkbox" id="chk-nashville" />
+        <span>Nashville</span>
+      </label>
+    </div>
+
+    <div class="control-group">
+      <label for="sel-pinyin-style" class="control-label">Pinyin:</label>
+      <select id="sel-pinyin-style">
+        <option value="marks">Tone Marks (wǒ)</option>
+        <option value="numbers">Numbers (wo3)</option>
+        <option value="none">No Tones (wo)</option>
+        <option value="hidden">Hide Pinyin</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label class="toggle-label">
+        <input type="checkbox" id="chk-diagrams" checked />
+        <span>Chord Boxes</span>
+      </label>
+    </div>
+  </section>
+
+  <!-- Main Single Webpage Split View -->
+  <main class="workspace-grid">
+    <!-- Left Pane: Lyrics & ChordPro Editor -->
+    <section class="pane editor-pane">
+      <div class="pane-header">
+        <h2>Lyrics & ChordPro Source</h2>
+        <span class="pane-hint">Place chords in <code>[G]</code> brackets before words or characters</span>
+      </div>
+      <textarea id="chordpro-editor" spellcheck="false" aria-label="ChordPro Source Editor"></textarea>
+    </section>
+
+    <!-- Right Pane: Interactive 3-Tier Visual Sheet -->
+    <section class="pane preview-pane">
+      <div class="pane-header">
+        <h2>Interactive Score Sheet</h2>
+        <div id="key-summary-badges" class="badge-row"></div>
+      </div>
+
+      <div class="interactive-hint-bar">
+        💡 <strong>Quick Edit:</strong> Click any chord badge to rename or drag it to another word, or click <code>+</code> above a character to insert a chord!
+      </div>
+
+      <div id="score-sheet" class="score-sheet">
+        <div class="sheet-header">
+          <div>
+            <h2 id="preview-title">Loading...</h2>
+            <p id="preview-subtitle" class="sheet-subtitle"></p>
+          </div>
+          <div id="preview-artist" class="sheet-artist"></div>
+        </div>
+        <div id="preview-meta-bar" class="sheet-meta-bar"></div>
+        <div id="preview-diagrams" class="chord-diagrams-grid"></div>
+        <div id="preview-sections" class="sheet-sections"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
