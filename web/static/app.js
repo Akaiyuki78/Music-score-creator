@@ -582,6 +582,170 @@
     }
   }
 
+  // Worship Setlist Sequence State
+  let setlistSongs = [];
+  let activeSetlistIndex = -1;
+
+  function loadSetlistFromStorage() {
+    try {
+      const saved = localStorage.getItem("worship_setlist");
+      if (saved) {
+        setlistSongs = JSON.parse(saved);
+      }
+    } catch (e) {
+      setlistSongs = [];
+    }
+    renderSetlistTray();
+  }
+
+  function saveSetlistToStorage() {
+    try {
+      localStorage.setItem("worship_setlist", JSON.stringify(setlistSongs));
+    } catch (e) {}
+    renderSetlistTray();
+  }
+
+  function addCurrentSongToSetlist() {
+    const title = previewTitle.textContent.trim() || "Untitled Song";
+    const outKey = (boxOutputKey ? boxOutputKey.textContent.trim() : "") || "C";
+    const songEntry = {
+      id: Date.now(),
+      title: title,
+      artist: previewArtist.textContent.trim() || "",
+      key: outKey,
+      chordpro_text: editor.value,
+      transpose_semitones: transposeSemitones,
+      capo: parseInt(selCapo.value, 10) || 0,
+      use_capo_shapes: chkCapoShapes.checked,
+      use_nashville: chkNashville.checked,
+      tone_style: selPinyinStyle.value,
+      show_pinyin: selPinyinStyle.value !== "hidden",
+    };
+
+    setlistSongs.push(songEntry);
+    activeSetlistIndex = setlistSongs.length - 1;
+    saveSetlistToStorage();
+  }
+
+  function renderSetlistTray() {
+    const listEl = document.getElementById("setlist-items");
+    const countEl = document.getElementById("setlist-count-badge");
+    if (!listEl) return;
+
+    if (countEl) {
+      countEl.textContent = `${setlistSongs.length} song${setlistSongs.length === 1 ? "" : "s"}`;
+    }
+
+    if (setlistSongs.length === 0) {
+      listEl.innerHTML = `<span class="setlist-empty-hint">Setlist is empty. Search a song and click "➕ Add to Set" to build your 4–5 song lineup!</span>`;
+      return;
+    }
+
+    listEl.innerHTML = "";
+    setlistSongs.forEach((song, idx) => {
+      if (idx > 0) {
+        const arrow = document.createElement("span");
+        arrow.className = "setlist-transition-arrow";
+        arrow.textContent = "➔";
+        listEl.appendChild(arrow);
+      }
+
+      const pill = document.createElement("div");
+      pill.className = `setlist-item-pill ${idx === activeSetlistIndex ? "active" : ""}`;
+      pill.title = "Click to load and edit this song";
+      pill.innerHTML = `
+        <span class="setlist-item-num">#${idx + 1}</span>
+        <span class="setlist-item-title">${song.title}</span>
+        <span class="setlist-item-key">${song.key || "C"}</span>
+        <span class="setlist-item-remove" title="Remove from set">✕</span>
+      `;
+
+      pill.addEventListener("click", (e) => {
+        if (e.target.classList.contains("setlist-item-remove")) {
+          e.stopPropagation();
+          setlistSongs.splice(idx, 1);
+          if (activeSetlistIndex >= setlistSongs.length) {
+            activeSetlistIndex = setlistSongs.length - 1;
+          }
+          saveSetlistToStorage();
+          return;
+        }
+
+        // Switch to this song in editor
+        activeSetlistIndex = idx;
+        renderSetlistTray();
+        editor.value = song.chordpro_text;
+        transposeSemitones = song.transpose_semitones || 0;
+        lblTranspose.textContent = `${transposeSemitones > 0 ? "+" : ""}${transposeSemitones} st`;
+        selCapo.value = String(song.capo || 0);
+        chkCapoShapes.checked = song.use_capo_shapes !== false;
+        refreshPreview();
+      });
+
+      listEl.appendChild(pill);
+    });
+  }
+
+  async function exportFullSongbookPDF() {
+    if (setlistSongs.length === 0) {
+      alert("Please add at least 1 song to the Sunday Set before exporting!");
+      return;
+    }
+
+    // Ensure currently edited song settings are refreshed in setlist if it's in the set
+    if (activeSetlistIndex >= 0 && activeSetlistIndex < setlistSongs.length) {
+      const curr = setlistSongs[activeSetlistIndex];
+      curr.chordpro_text = editor.value;
+      curr.transpose_semitones = transposeSemitones;
+      curr.capo = parseInt(selCapo.value, 10) || 0;
+      curr.key = boxOutputKey ? boxOutputKey.textContent.trim() : curr.key;
+      saveSetlistToStorage();
+    }
+
+    const payload = {
+      title: "Sunday Worship Setlist",
+      songs: setlistSongs.map((s) => ({
+        chordpro_text: s.chordpro_text,
+        transpose_semitones: s.transpose_semitones,
+        capo: s.capo,
+        use_capo_shapes: s.use_capo_shapes,
+        use_nashville: s.use_nashville,
+        tone_style: s.tone_style || "marks",
+        show_pinyin: s.show_pinyin !== false,
+      })),
+    };
+
+    try {
+      const res = await fetch("/api/export/songbook-pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to export setlist PDF");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Sunday_Worship_Setlist.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert("Export error: " + e.message);
+    }
+  }
+
+  document.getElementById("btn-add-to-setlist")?.addEventListener("click", addCurrentSongToSetlist);
+  document.getElementById("btn-export-songbook")?.addEventListener("click", exportFullSongbookPDF);
+  document.getElementById("btn-clear-setlist")?.addEventListener("click", () => {
+    if (confirm("Clear all songs from the Sunday setlist?")) {
+      setlistSongs = [];
+      activeSetlistIndex = -1;
+      saveSetlistToStorage();
+    }
+  });
+
   document.getElementById("btn-export-pdf")?.addEventListener("click", () =>
     downloadFile("/api/export/pdf", `${previewTitle.textContent || "score"}.pdf`)
   );
@@ -592,6 +756,7 @@
     downloadFile("/api/export/chordpro", `${previewTitle.textContent || "score"}.cho`)
   );
 
-  // Initial load: start with Shout to the Lord
+  // Initial load: start with Shout to the Lord and load existing setlist
   loadDemo("shout");
+  loadSetlistFromStorage();
 })();

@@ -18,7 +18,7 @@ from score_pipeline.musicxml_io import (
     song_score_to_musicxml,
     musicxml_to_song_score,
 )
-from score_pipeline.pdf_renderer import render_score_to_pdf
+from score_pipeline.pdf_renderer import render_score_to_pdf, render_songbook_to_pdf
 from score_pipeline.sample_generator import (
     DEMO_CHORDPRO_Preset,
     GE_QIAN_CHORDPRO_PRESET,
@@ -429,6 +429,45 @@ async def export_pdf(req: RenderPreviewRequest) -> FileResponse:
         path=str(tmp_pdf),
         media_type="application/pdf",
         filename=filename,
+    )
+
+
+class ExportSongbookRequest(BaseModel):
+    title: str = "Sunday Worship Setlist"
+    songs: List[RenderPreviewRequest]
+
+
+@app.post("/api/export/songbook-pdf")
+async def export_songbook_pdf(req: ExportSongbookRequest) -> FileResponse:
+    if not req.songs:
+        raise HTTPException(status_code=400, detail="No songs in setlist to export")
+
+    scores_with_settings = []
+    for s_req in req.songs:
+        score = parse_chordpro_to_song_score(s_req.chordpro_text, tone_style=s_req.tone_style)
+        if s_req.capo is not None:
+            score.capo = s_req.capo
+        scores_with_settings.append(
+            (
+                score,
+                s_req.transpose_semitones,
+                s_req.use_capo_shapes,
+                s_req.use_nashville,
+                s_req.show_pinyin,
+                True,  # diagrams
+            )
+        )
+
+    tmp_pdf = WORKSPACE_OUT_DIR / "worship_setlist_songbook.pdf"
+    render_songbook_to_pdf(
+        scores_with_settings=scores_with_settings,
+        output_path=tmp_pdf,
+        setlist_title=req.title,
+    )
+    return FileResponse(
+        path=str(tmp_pdf),
+        media_type="application/pdf",
+        filename=f"{req.title.replace(' ', '_')}.pdf",
     )
 
 

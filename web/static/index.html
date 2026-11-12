@@ -17,14 +17,29 @@
       </div>
     </div>
     <div class="topbar-actions">
-      <button type="button" id="btn-load-geqian" class="btn btn-secondary">周杰伦《晴天》</button>
-      <button type="button" id="btn-load-demo" class="btn btn-secondary">周华健《朋友》</button>
-      <button type="button" id="btn-load-shout" class="btn btn-secondary">Shout to the Lord</button>
-      <button type="button" id="btn-export-pdf" class="btn btn-primary">📄 PDF Chart</button>
+      <button type="button" id="btn-add-to-setlist" class="btn btn-primary" title="Add this song with current key & chords to your Sunday setlist">➕ Add to Set</button>
+      <button type="button" id="btn-export-songbook" class="btn btn-primary-highlight" title="Export entire setlist as 1 unified PDF songbook">📚 Export Setlist PDF</button>
+      <button type="button" id="btn-export-pdf" class="btn btn-secondary">📄 Current Song PDF</button>
       <button type="button" id="btn-export-xml" class="btn btn-outline">🎼 MusicXML</button>
       <button type="button" id="btn-export-cho" class="btn btn-outline">📝 ChordPro</button>
     </div>
   </header>
+
+  <!-- Worship Setlist Sequence Tray -->
+  <section class="setlist-tray" aria-label="Sunday Worship Setlist Tray">
+    <div class="setlist-inner">
+      <div class="setlist-header-group">
+        <span class="setlist-badge">📋 SUNDAY SET:</span>
+        <span id="setlist-count-badge" class="badge">0 songs</span>
+      </div>
+      <div id="setlist-items" class="setlist-items-row">
+        <span class="setlist-empty-hint">Setlist is empty. Search a song and click "➕ Add to Set" to build your 4-5 song lineup!</span>
+      </div>
+      <div class="setlist-actions">
+        <button type="button" id="btn-clear-setlist" class="btn btn-sm btn-outline-alt" title="Clear all songs in setlist">Clear Set</button>
+      </div>
+    </div>
+  </section>
 
   <!-- Single Quick Search & Scrape Banner -->
   <section class="quick-add-banner" aria-label="Quick Search or Scrape Song">

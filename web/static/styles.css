@@ -77,6 +77,119 @@ body {
   background: #1d4ed8;
 }
 
+/* Worship Setlist Sequence Tray */
+.setlist-tray {
+  background: #0f172a;
+  color: #f8fafc;
+  border-bottom: 2px solid #334155;
+  padding: 8px 20px;
+}
+
+.setlist-inner {
+  max-width: 1800px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.setlist-header-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.setlist-badge {
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+.setlist-items-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  overflow-x: auto;
+  padding: 2px 0;
+}
+
+.setlist-empty-hint {
+  font-size: 0.82rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+.setlist-item-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #1e293b;
+  border: 1px solid #334155;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.setlist-item-pill:hover {
+  border-color: #3b82f6;
+  background: #273549;
+}
+
+.setlist-item-pill.active {
+  background: #1e3a8a;
+  border-color: #60a5fa;
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.4);
+}
+
+.setlist-item-num {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.setlist-item-title {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.setlist-item-key {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.15);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.setlist-item-remove {
+  color: #94a3b8;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0 2px;
+  border-radius: 3px;
+}
+
+.setlist-item-remove:hover {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.15);
+}
+
+.setlist-transition-arrow {
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .quick-add-banner {
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-color);

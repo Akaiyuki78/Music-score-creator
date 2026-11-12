@@ -419,3 +419,238 @@ def render_score_to_pdf(
     _draw_footer()
     c.save()
     return output_path
+
+
+def render_songbook_to_pdf(
+    scores_with_settings: List[Tuple[SongScore, int, bool, bool, bool, bool]],
+    output_path: Union[str, Path],
+    setlist_title: str = "Sunday Worship Setlist",
+) -> Path:
+    """
+    Renders multiple songs sequentially into a single unified PDF booklet with a setlist overview.
+    scores_with_settings items: (score, transpose_semitones, use_capo_shapes, use_nashville, show_pinyin, show_diagrams)
+    """
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    font_reg, font_bold = _ensure_cjk_fonts()
+    page_w, page_h = A4
+    margin_x = 36.0
+    margin_top = 40.0
+    margin_bottom = 36.0
+    usable_w = page_w - (2 * margin_x)
+
+    c = canvas.Canvas(str(output_path), pagesize=A4)
+    total_page_num = 1
+
+    for song_idx, item in enumerate(scores_with_settings):
+        score, transpose_semitones, use_capo_shapes, use_nashville, show_pinyin, show_diagrams = item
+
+        effective_semi = transpose_semitones - (score.capo if use_capo_shapes else 0)
+        concert_key = transpose_key(score.key, transpose_semitones)
+        play_key = transpose_key(concert_key, -(score.capo if use_capo_shapes else 0))
+        prefer_flats = use_flats_for_key(play_key)
+
+        def _transform_chord(ch: Optional[str]) -> Optional[str]:
+            if not ch:
+                return None
+            transposed = transpose_chord(ch, effective_semi, prefer_flats=prefer_flats)
+            if use_nashville:
+                return chord_to_nashville(transposed, play_key)
+            return transposed
+
+        def _draw_song_footer() -> None:
+            c.setFont(font_reg, 8.5)
+            c.setFillColor(colors.HexColor("#64748B"))
+            f_left = f"{song_idx + 1}. {score.title} — Key: {play_key}"
+            if score.capo > 0 and use_capo_shapes:
+                f_left += f" (Capo {score.capo})"
+            c.drawString(margin_x, 20, f_left)
+            c.drawRightString(page_w - margin_x, 20, f"Page {total_page_num}")
+
+        def _song_new_page() -> float:
+            nonlocal total_page_num
+            _draw_song_footer()
+            c.showPage()
+            total_page_num += 1
+            return page_h - margin_top
+
+        y = page_h - margin_top
+
+        # Song Number & Title Header
+        c.setFont(font_bold, 18)
+        c.setFillColor(colors.HexColor("#0F172A"))
+        c.drawString(margin_x, y, f"{song_idx + 1}. {score.title}")
+
+        if score.artist:
+            c.setFont(font_reg, 10.5)
+            c.setFillColor(colors.HexColor("#475569"))
+            c.drawRightString(page_w - margin_x, y + 2, score.artist)
+        y -= 16
+
+        if score.subtitle:
+            c.setFont(font_reg, 9.5)
+            c.setFillColor(colors.HexColor("#64748B"))
+            c.drawString(margin_x, y, score.subtitle)
+            y -= 12
+
+        # Metadata bar
+        y -= 4
+        c.setFillColor(colors.HexColor("#F1F5F9"))
+        c.roundRect(margin_x, y - 16, usable_w, 20, 4, stroke=0, fill=1)
+
+        c.setFont(font_bold, 9)
+        c.setFillColor(colors.HexColor("#1E293B"))
+        meta_items = [f"Concert: {concert_key}"]
+        if score.capo > 0:
+            if use_capo_shapes:
+                meta_items.append(f"Capo: Fret {score.capo} (Play {play_key})")
+            else:
+                meta_items.append(f"Suggested Capo: {score.capo}")
+        else:
+            meta_items.append(f"Key: {play_key}")
+        if score.tempo_bpm:
+            meta_items.append(f"Tempo: {score.tempo_bpm} BPM")
+        if score.time_signature:
+            meta_items.append(f"Time: {score.time_signature}")
+        c.drawString(margin_x + 8, y - 12, "   |   ".join(meta_items))
+        y -= 26
+
+        # Fretboard Diagrams
+        if show_diagrams and not use_nashville:
+            unique_chords = []
+            for s in score.sections:
+                for l in s.lines:
+                    for tok in l.tokens:
+                        if tok.chord:
+                            ch_disp = _transform_chord(tok.chord)
+                            if ch_disp and ch_disp not in unique_chords:
+                                unique_chords.append(ch_disp)
+            if unique_chords:
+                y = _draw_chord_diagrams_grid(c, unique_chords[:10], margin_x, y, usable_w, font_reg, font_bold)
+
+        # Render sections
+        chord_font_size = 9.5
+        pinyin_font_size = 7.2
+        lyric_font_size = 11.0
+
+        for sec in score.sections:
+            sec_type = sec.section_type.lower()
+            is_chorus = (sec_type == "chorus")
+
+            if y < margin_bottom + 45:
+                y = _song_new_page()
+
+            section_top_y = y
+            c.setFont(font_bold, 9.5)
+            c.setFillColor(colors.HexColor("#2563EB") if is_chorus else colors.HexColor("#475569"))
+            c.drawString(margin_x + (10 if is_chorus else 0), y, sec.name.upper())
+            y -= 13
+
+            indent_x = 10 if is_chorus else 0
+
+            for s_line in sec.lines:
+                if s_line.is_comment:
+                    if y < margin_bottom + 20:
+                        y = _song_new_page()
+                    c.setFont(font_reg, 8.5)
+                    c.setFillColor(colors.HexColor("#64748B"))
+                    c.drawString(margin_x + indent_x, y, f"// {s_line.comment_text}")
+                    y -= 12
+                    continue
+
+                cells = []
+                has_any_chord = False
+                has_any_pinyin = False
+                has_any_text = False
+
+                for tok in s_line.tokens:
+                    c_disp = _transform_chord(tok.chord) if tok.chord else None
+                    if c_disp:
+                        has_any_chord = True
+                    if tok.pinyin and show_pinyin:
+                        has_any_pinyin = True
+                    if tok.text and tok.text.strip():
+                        has_any_text = True
+
+                    chord_w = _estimate_text_width(c_disp, font_bold, chord_font_size) + 5.0 if c_disp else 0.0
+                    pinyin_w = _estimate_text_width(tok.pinyin, font_reg, pinyin_font_size) + 3.0 if (tok.pinyin and show_pinyin) else 0.0
+                    lyric_w = _estimate_text_width(tok.text, font_reg, lyric_font_size) if tok.text else 0.0
+                    if tok.is_cjk:
+                        lyric_w = max(lyric_w, 15.0)
+
+                    cell_w = max(chord_w, pinyin_w, lyric_w, 6.0 if tok.text == " " else 0.0)
+                    cells.append((tok, c_disp, cell_w))
+
+                rows = []
+                curr_row = []
+                curr_w = 0.0
+                max_w = usable_w - indent_x
+
+                for cell in cells:
+                    if curr_w + cell[2] > max_w and curr_row:
+                        rows.append(curr_row)
+                        curr_row = [cell]
+                        curr_w = cell[2]
+                    else:
+                        curr_row.append(cell)
+                        curr_w += cell[2]
+                if curr_row:
+                    rows.append(curr_row)
+
+                for r_cells in rows:
+                    row_height = (
+                        (12.5 if has_any_chord else 0.0)
+                        + (12.5 if has_any_pinyin else 0.0)
+                        + (15.0 if has_any_text else 3.5)
+                        + 2.0
+                    )
+                    if y - row_height < margin_bottom:
+                        y = _song_new_page()
+                        section_top_y = y
+
+                    cursor_x = margin_x + indent_x
+                    y_chord = y
+                    y_pinyin = y_chord - (12.0 if has_any_chord else 0.0)
+                    y_lyric = y_pinyin - (13.0 if has_any_pinyin else (12.0 if has_any_chord else 0.0))
+
+                    for tok, disp_chord, cell_w in r_cells:
+                        if disp_chord:
+                            c.setFont(font_bold, chord_font_size)
+                            c.setFillColor(colors.HexColor("#1D4ED8"))
+                            c.drawString(cursor_x, y_chord, disp_chord)
+
+                        if show_pinyin and tok.pinyin:
+                            c.setFont(font_reg, pinyin_font_size)
+                            c.setFillColor(colors.HexColor("#64748B"))
+                            if tok.is_cjk:
+                                c.drawCentredString(cursor_x + cell_w / 2.0 - 1.5, y_pinyin, tok.pinyin)
+                            else:
+                                c.drawString(cursor_x, y_pinyin, tok.pinyin)
+
+                        if tok.text and tok.text != " ":
+                            c.setFont(font_reg, lyric_font_size)
+                            c.setFillColor(colors.HexColor("#0F172A"))
+                            if tok.is_cjk:
+                                c.drawCentredString(cursor_x + cell_w / 2.0 - 1.5, y_lyric, tok.text)
+                            else:
+                                c.drawString(cursor_x, y_lyric, tok.text)
+
+                        cursor_x += cell_w
+
+                    y -= row_height
+
+            if is_chorus and section_top_y > y + 6:
+                c.setStrokeColor(colors.HexColor("#3B82F6"))
+                c.setLineWidth(2.5)
+                c.line(margin_x + 2, section_top_y, margin_x + 2, y + 8)
+
+            y -= 5
+
+        _draw_song_footer()
+        if song_idx < len(scores_with_settings) - 1:
+            c.showPage()
+            total_page_num += 1
+
+    c.save()
+    return output_path
