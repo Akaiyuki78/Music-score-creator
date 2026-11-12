@@ -255,7 +255,7 @@
 
     // Render Sections & 3-tier lines
     previewSections.innerHTML = "";
-    (preview.sections || []).forEach((sec) => {
+    (preview.sections || []).forEach((sec, secIdx) => {
       const secEl = document.createElement("div");
       const isChorus =
         (sec.section_type || "").toLowerCase() === "chorus" ||
@@ -268,7 +268,7 @@
       titleEl.textContent = `[${sec.name}]`;
       secEl.appendChild(titleEl);
 
-      (sec.lines || []).forEach((ln) => {
+      (sec.lines || []).forEach((ln, lineIdx) => {
         if (ln.is_comment) {
           const cEl = document.createElement("div");
           cEl.className = "score-comment";
@@ -286,8 +286,8 @@
           const cell = document.createElement("div");
           const isSpace = tok.text === " " && !tok.chord;
           cell.className = `token-cell${tok.is_cjk ? " is-cjk" : ""}${isSpace ? " is-space" : ""}`;
-          cell.dataset.secIdx = String(preview.sections.indexOf(sec));
-          cell.dataset.lineIdx = String(sec.lines.indexOf(ln));
+          cell.dataset.secIdx = String(secIdx);
+          cell.dataset.lineIdx = String(lineIdx);
           cell.dataset.tokIdx = String(tokIdx);
 
           // Drag and Drop listeners on target cells
@@ -332,14 +332,20 @@
             delSpan.addEventListener("click", (e) => {
               e.stopPropagation();
               e.preventDefault();
-              updateSingleChord(parseInt(cell.dataset.secIdx, 10), parseInt(cell.dataset.lineIdx, 10), tokIdx, null);
+              const sIdx = parseInt(cell.dataset.secIdx, 10);
+              const lIdx = parseInt(cell.dataset.lineIdx, 10);
+              const tIdx = parseInt(cell.dataset.tokIdx, 10);
+              updateSingleChord(sIdx, lIdx, tIdx, null);
             });
 
             nameSpan.addEventListener("click", (e) => {
               e.stopPropagation();
+              const sIdx = parseInt(cell.dataset.secIdx, 10);
+              const lIdx = parseInt(cell.dataset.lineIdx, 10);
+              const tIdx = parseInt(cell.dataset.tokIdx, 10);
               const newChord = prompt(`Edit chord above "${tok.text.trim() || 'space'}" (leave empty to remove):`, tok.chord || tok.raw_chord);
               if (newChord !== null) {
-                updateSingleChord(parseInt(cell.dataset.secIdx, 10), parseInt(cell.dataset.lineIdx, 10), tokIdx, newChord.trim());
+                updateSingleChord(sIdx, lIdx, tIdx, newChord.trim());
               }
             });
 
