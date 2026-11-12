@@ -317,8 +317,11 @@
           if (tok.chord) {
             const chip = document.createElement("span");
             chip.className = "chord-chip";
-            chip.textContent = tok.chord;
-            chip.title = "Drag to another word/space, or click to edit/remove";
+            chip.innerHTML = `
+              <span class="chord-chip-text">${tok.chord}</span>
+              <span class="chord-chip-del" title="Delete this chord">✕</span>
+            `;
+            chip.title = "Click chord name to edit, click ✕ to delete, or drag to another word/space";
             chip.draggable = true;
 
             chip.addEventListener("dragstart", (e) => {
@@ -330,6 +333,12 @@
 
             chip.addEventListener("click", (e) => {
               e.stopPropagation();
+              // If user clicked the little '✕' delete button
+              if (e.target.classList.contains("chord-chip-del")) {
+                updateSingleChord(parseInt(cell.dataset.secIdx, 10), parseInt(cell.dataset.lineIdx, 10), tokIdx, null);
+                return;
+              }
+              // Otherwise edit the chord name
               const newChord = prompt(`Edit chord above "${tok.text.trim() || 'space'}" (leave empty to remove):`, tok.chord || tok.raw_chord);
               if (newChord !== null) {
                 updateSingleChord(parseInt(cell.dataset.secIdx, 10), parseInt(cell.dataset.lineIdx, 10), tokIdx, newChord.trim());

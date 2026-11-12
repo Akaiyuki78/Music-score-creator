@@ -622,19 +622,43 @@ input[type="text"] {
 
 .chord-chip {
   cursor: grab;
-  padding: 1px 4px;
+  padding: 1px 5px;
   border-radius: 4px;
   background: rgba(37, 99, 235, 0.1);
   border: 1px solid rgba(37, 99, 235, 0.25);
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   transition: transform 0.1s ease, background-color 0.15s ease;
 }
 
 .chord-chip:hover {
   background: rgba(37, 99, 235, 0.22);
   transform: translateY(-1px);
+}
+
+.chord-chip-text {
+  cursor: pointer;
+}
+
+.chord-chip-del {
+  display: none;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #94a3b8;
+  padding: 0 1px;
+  border-radius: 2px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.chord-chip:hover .chord-chip-del {
+  display: inline-block;
+}
+
+.chord-chip-del:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.15);
 }
 
 .chord-chip:active {
